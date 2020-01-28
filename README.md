@@ -1,5 +1,5 @@
 ##  Keycloak Custom Protocol Mapper with Kotlin and Gradle
-This repository contains an example Keycloak Protocol Mapper to customize the JWT returned by Keycloak
+This repository contains an example <a href="https://github.com/keycloak/keycloak">Keycloak</a> Protocol Mapper to customize the JWT returned by Keycloak
 using Kotlin and Gradle.
 
 This mapper enhances the JWT claim so that it contains a mapping from a user's group memberships to the respective group roles.
