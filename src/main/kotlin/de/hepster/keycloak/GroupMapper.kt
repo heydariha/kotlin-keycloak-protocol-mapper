@@ -16,7 +16,6 @@ import java.util.*
 
 class GroupMapper : AbstractOIDCProtocolMapper(), OIDCAccessTokenMapper, OIDCIDTokenMapper, UserInfoTokenMapper {
 
-
     private val PROVIDER_ID = "groupToRoleMapper"
     private val configProperties: MutableList<ProviderConfigProperty> =
         ArrayList()
