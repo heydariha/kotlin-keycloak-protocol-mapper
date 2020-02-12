@@ -1,0 +1,4 @@
+FROM jboss/keycloak
+
+USER root
+RUN chmod 755 /opt/jboss/keycloak/standalone/deployments/*

@@ -1,6 +1,10 @@
-buildscript{
-    ext{
+buildscript {
+    ext {
         keycloakVersion = "8.0.1"
+    }
+    repositories { jcenter() }
+    dependencies {
+        classpath("se.transmode.gradle:gradle-docker:1.2")
     }
 }
 
@@ -8,6 +12,7 @@ plugins {
     id 'org.jetbrains.kotlin.jvm' version '1.3.61'
     id "com.github.johnrengelman.shadow" version "5.2.0"
 }
+apply plugin: 'docker'
 
 group 'org.example'
 version '1.0-SNAPSHOT'
@@ -30,3 +35,21 @@ compileKotlin {
 compileTestKotlin {
     kotlinOptions.jvmTarget = "1.8"
 }
+java {
+    sourceCompatibility = JavaVersion.VERSION_1_8
+    targetCompatibility = JavaVersion.VERSION_1_8
+}
+
+task buildDocker(type: Docker) {
+    dockerfile "DOCKERFILE"
+    tag = "keycloak"
+    tagVersion = "LATEST"
+
+    addFile {
+        from shadowJar
+        rename { "mapper.jar" }
+        into "/opt/jboss/keycloak/standalone/deployments"
+    }
+}
+
+buildDocker.dependsOn(shadowJar)

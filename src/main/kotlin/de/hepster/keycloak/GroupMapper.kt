@@ -6,9 +6,9 @@ import org.keycloak.models.KeycloakSession
 import org.keycloak.models.ProtocolMapperModel
 import org.keycloak.models.UserSessionModel
 import org.keycloak.models.utils.ModelToRepresentation
+import org.keycloak.models.utils.RoleUtils
 import org.keycloak.protocol.ProtocolMapperUtils
 import org.keycloak.protocol.oidc.mappers.*
-import org.keycloak.protocol.oidc.mappers.GroupMembershipMapper.useFullPath
 import org.keycloak.provider.ProviderConfigProperty
 import org.keycloak.representations.IDToken
 import java.util.*
@@ -17,12 +17,11 @@ import java.util.*
 class GroupMapper : AbstractOIDCProtocolMapper(), OIDCAccessTokenMapper, OIDCIDTokenMapper, UserInfoTokenMapper {
 
 
-    private val PROVIDER_ID = "exampleGroupMapper"
+    private val PROVIDER_ID = "groupToRoleMapper"
     private val configProperties: MutableList<ProviderConfigProperty> =
         ArrayList()
 
     init {
-        val clientId = ProviderConfigProperty()
         OIDCAttributeMapperHelper.addTokenClaimNameConfig(configProperties)
         OIDCAttributeMapperHelper.addJsonTypeConfig(configProperties)
         OIDCAttributeMapperHelper.addIncludeInTokensConfig(configProperties, GroupMapper::class.java)
@@ -34,7 +33,7 @@ class GroupMapper : AbstractOIDCProtocolMapper(), OIDCAccessTokenMapper, OIDCIDT
 
 
     override fun getDisplayCategory(): String {
-        return "Servus Markus"
+        return "Group to Role Mapper"
     }
 
     override fun getConfigProperties(): MutableList<ProviderConfigProperty> {
@@ -42,11 +41,11 @@ class GroupMapper : AbstractOIDCProtocolMapper(), OIDCAccessTokenMapper, OIDCIDT
     }
 
     override fun getDisplayType(): String {
-        return "Group mapper"
+        return "Group to Role Mapper"
     }
 
     override fun getHelpText(): String {
-        return "Nu sag amol"
+        return "Maps a user's roles to its groups."
     }
 
     override fun setClaim(
@@ -58,14 +57,28 @@ class GroupMapper : AbstractOIDCProtocolMapper(), OIDCAccessTokenMapper, OIDCIDT
     ) {
         val membership: MutableList<Any> = LinkedList()
         for (group in userSession!!.user.groups) {
-            membership.add(mapOf(ModelToRepresentation.buildGroupPath(group) to group.roleMappings.map { it.name }))
+            membership.add(
+                mapOf(
+                    "name" to ModelToRepresentation.buildGroupPath(group),
+                    "roles" to group.roleMappings.map { it.name })
+            )
+        }
+
+        // Create a mapping from scopes to the roles they are associated with.
+        val scopeRoleMapping = clientSessionCtx!!.clientScopes.filter { it.name != null }.map { scm ->
+                mapOf("scope" to scm.name,
+                    "roles" to scm.scopeMappings.map { it.name })
         }
 
         OIDCAttributeMapperHelper.mapClaim(
             token,
             mappingModel,
-            JsonNodeFactory.instance.objectNode().putPOJO("groups", membership)
+            JsonNodeFactory.instance.objectNode().putPOJO(
+                "groups",
+                mapOf("detailedGroupMemberships" to membership, "detailedScopeToRoleMapping" to scopeRoleMapping)
+            )
         )
+
     }
 
     fun createClaimMapper(
